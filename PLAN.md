@@ -38,6 +38,7 @@
 - **Added the "silenced" gesture trigger** (`psst.png`) when holding the index finger vertically over the lips.
 - **Added a 300ms gesture cooldown buffer** to prevent images and confidence indicators from flickering due to temporary tracking dropouts.
 - **Simplified the default placeholder text** to the plain text: `"No motion detected."`.
+- **Integrated the "67" gesture as a full meme reaction image** (loading `assets/67.jpeg` when active), renaming the active label from `"confetti"` to `"67"`.
 
 ## Future
 - Add or replace custom reaction image files in the `assets/` folder if desired.
