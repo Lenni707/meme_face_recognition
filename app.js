@@ -37,6 +37,21 @@ let lastConfettiTriggerTime = 0;
 let maxConfettiIntensityInSession = 0;
 const CONFETTI_MIN_DURATION = 2000; // 2 seconds minimum play window
 
+// Cooldown variables to prevent image flickering
+const GESTURE_COOLDOWN = 300; // 300ms buffer window
+let lastActiveTimes = {
+  monkey: 0,
+  speedFace: 0,
+  mogging: 0,
+  silenced: 0
+};
+let activeSessionConfidences = {
+  monkey: 0,
+  speedFace: 0,
+  mogging: 0,
+  silenced: 0
+};
+
 async function start() {
   await refreshAssetStatus();
   await startCamera();
@@ -155,8 +170,31 @@ function runDetection() {
   const confettiScores = computeConfettiConfidence(hands, height);
   const speedFaceConfidence = computeSpeedFaceConfidence(face);
 
-  // Apply stateful lock to keep confetti active for a minimum of 2 seconds once triggered
   const now = performance.now();
+
+  // Helper to check if a gesture is active, incorporating the 300ms cooldown
+  const checkGestureActiveState = (name, rawConfidence, threshold) => {
+    if (rawConfidence >= threshold) {
+      lastActiveTimes[name] = now;
+      activeSessionConfidences[name] = Math.max(activeSessionConfidences[name], rawConfidence);
+      return { active: true, confidence: activeSessionConfidences[name] };
+    } else if (now - lastActiveTimes[name] < GESTURE_COOLDOWN) {
+      // Within cooldown: keep it active, but decay the confidence slightly to show it's fading
+      const progress = (now - lastActiveTimes[name]) / GESTURE_COOLDOWN;
+      const confidence = activeSessionConfidences[name] * (1.0 - progress * 0.3); // decay up to 30%
+      return { active: true, confidence: confidence };
+    } else {
+      activeSessionConfidences[name] = 0.0;
+      return { active: false, confidence: 0.0 };
+    }
+  };
+
+  const monkeyState = checkGestureActiveState("monkey", fingerMouthConfidence, FINGER_MOUTH_THRESHOLD);
+  const speedFaceState = checkGestureActiveState("speedFace", speedFaceConfidence, SPEED_FACE_THRESHOLD);
+  const chinFingerState = checkGestureActiveState("mogging", chinFingerConfidence, CHIN_FINGER_THRESHOLD);
+  const silencedState = checkGestureActiveState("silenced", silencedConfidence, SILENCED_THRESHOLD);
+
+  // Apply stateful lock to keep confetti active for a minimum of 2 seconds once triggered
   let confettiConfidence = 0.0;
   let confettiActive = false;
   const timeSinceTrigger = now - lastConfettiTriggerTime;
@@ -182,23 +220,30 @@ function runDetection() {
     }
   }
 
-  const fingerMouthActive = fingerMouthConfidence >= FINGER_MOUTH_THRESHOLD;
-  const speedFaceActive = speedFaceConfidence >= SPEED_FACE_THRESHOLD;
-  const chinFingerActive = chinFingerConfidence >= CHIN_FINGER_THRESHOLD;
-  const silencedActive = silencedConfidence >= SILENCED_THRESHOLD;
+  const activeCandidates = [
+    { name: "monkey", state: monkeyState },
+    { name: "speedFace", state: speedFaceState },
+    { name: "mogging", state: chinFingerState },
+    { name: "silenced", state: silencedState }
+  ].filter(c => c.state.active);
 
-  const activeImage = strongestActiveImage([
-    ["monkey", fingerMouthConfidence, FINGER_MOUTH_THRESHOLD],
-    ["speedFace", speedFaceConfidence, SPEED_FACE_THRESHOLD],
-    ["mogging", chinFingerConfidence, CHIN_FINGER_THRESHOLD],
-    ["silenced", silencedConfidence, SILENCED_THRESHOLD]
-  ]);
+  let activeImage = null;
+  if (activeCandidates.length > 0) {
+    // Select candidate with the highest smoothed confidence
+    let strongest = activeCandidates[0];
+    for (let i = 1; i < activeCandidates.length; i++) {
+      if (activeCandidates[i].state.confidence > strongest.state.confidence) {
+        strongest = activeCandidates[i];
+      }
+    }
+    activeImage = strongest.name;
+  }
 
   const maxConfidence = Math.max(
-    fingerMouthConfidence,
-    speedFaceConfidence,
-    chinFingerConfidence,
-    silencedConfidence,
+    monkeyState.confidence,
+    speedFaceState.confidence,
+    chinFingerState.confidence,
+    silencedState.confidence,
     confettiConfidence
   );
 
@@ -207,12 +252,12 @@ function runDetection() {
     handBox: hands.length > 0 ? hands[0].box : null,
     handBoxes: hands.map(h => h.box),
     confidence: maxConfidence,
-    fingerMouthConfidence,
-    speedFaceConfidence,
-    chinFingerConfidence,
-    silencedConfidence,
+    fingerMouthConfidence: monkeyState.confidence,
+    speedFaceConfidence: speedFaceState.confidence,
+    chinFingerConfidence: chinFingerState.confidence,
+    silencedConfidence: silencedState.confidence,
     confettiConfidence,
-    gestureActive: fingerMouthActive || speedFaceActive || chinFingerActive || silencedActive || confettiActive,
+    gestureActive: monkeyState.active || speedFaceState.active || chinFingerState.active || silencedState.active || confettiActive,
     activeImage,
     confettiActive,
     confettiIntensity: confettiConfidence,
