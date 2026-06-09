@@ -170,12 +170,6 @@ body[data-confetti="active"] .confetti-layer {
   display: none;
 }
 
-.meme-panel[data-active-image="monkey"] #monkeyImage:not(.available) ~ .placeholder strong::after,
-.meme-panel[data-active-image="speedFace"] #speedFaceImage:not(.available) ~ .placeholder strong::after,
-.meme-panel[data-active-image="mogging"] #moggingImage:not(.available) ~ .placeholder strong::after,
-.meme-panel[data-active-image="silenced"] #silencedImage:not(.available) ~ .placeholder strong::after {
-  content: " - detected";
-}
 
 @media (max-width: 820px) {
   .app-shell {
