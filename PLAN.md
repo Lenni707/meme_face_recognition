@@ -39,6 +39,7 @@
 - **Added a 300ms gesture cooldown buffer** to prevent images and confidence indicators from flickering due to temporary tracking dropouts.
 - **Simplified the default placeholder text** to the plain text: `"No motion detected."`.
 - **Integrated the "67" gesture as a full meme reaction image** (loading `assets/67.jpeg` when active), renaming the active label from `"confetti"` to `"67"`.
+- **Optimized the `speedFace` gesture thresholds** to trigger more reliably when lips are closed/touching but form a puckered oval/circle shape (using `normalizedScore` instead of `centeredScore` for roundness to avoid penalizing very round mouth shapes), and when eyes are moderately squinted.
 
 ## Future
 - Add or replace custom reaction image files in the `assets/` folder if desired.

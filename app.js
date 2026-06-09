@@ -470,9 +470,12 @@ function computeSpeedFaceConfidence(face) {
   }
 
   const metrics = face.metrics;
-  const eyeScore = normalizedInverse(metrics.eye_open, 0.075, 0.16);
-  const mouthClosedScore = normalizedInverse(metrics.mouth_open, 0.012, 0.045);
-  const mouthCircleScore = centeredScore(metrics.mouth_outer_roundness, 0.72, 0.22);
+  // Allows slightly more closed eyes (squinting) to trigger.
+  const eyeScore = normalizedInverse(metrics.eye_open, 0.13, 0.20);
+  // Requires lips to be closed together (allowing a tiny gap for tracking noise).
+  const mouthClosedScore = normalizedInverse(metrics.mouth_open, 0.015, 0.055);
+  // Broadens tolerance for oval/circle shapes by scoring higher roundness up to 1.0 (no penalty for being too round).
+  const mouthCircleScore = normalizedScore(metrics.mouth_outer_roundness, 0.45, 0.65);
   const confidence = Math.min(eyeScore, mouthClosedScore, mouthCircleScore);
 
   return Number(Math.max(0.0, Math.min(1.0, confidence)).toFixed(2));
