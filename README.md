@@ -1,6 +1,6 @@
 # Facial Monkey Test
 
-A containerized Python webcam app that shows your camera feed on the left and displays a reaction image on the right:
+A client-side static webcam app that shows your camera feed on the left and displays a reaction image on the right:
 
 - `assets/thinking_monkey.jpeg` when your finger is detected near your mouth.
 - `assets/speed_face.png` when your eyes are closed and your lips are closed in a near-circle shape.
@@ -9,13 +9,26 @@ A containerized Python webcam app that shows your camera feed on the left and di
 
 When multiple image reactions are active, the app shows the one with the highest confidence. The right pane also shows one word for the current reaction: `none`, `monkey`, `speed`, `mogging`, or `confetti`.
 
-## Run
+This app runs entirely in your browser using MediaPipe's client-side vision tasks, meaning no backend or server-side processing is required.
+
+## Run Locally
+
+Due to browser security protocols, accessing webcams and loading WebAssembly modules requires a local server context (you cannot open the `index.html` file directly as a local file).
+
+You can run a local server in the project directory using:
 
 ```bash
-docker compose up --build
+# Using Python
+python3 -m http.server 8000
 ```
 
-Open http://localhost:8000 and allow webcam access in the browser.
+Then open http://localhost:8000 and allow webcam access.
+
+## Deploying
+
+Since this is a static site, you can deploy it for free using:
+- **GitHub Pages** (Enable Pages under your repository settings)
+- **Vercel** / **Netlify** / **Cloudflare Pages**
 
 ## Meme Asset
 

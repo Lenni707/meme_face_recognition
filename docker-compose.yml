@@ -1,7 +1,0 @@
-services:
-  monkey-meme-app:
-    build: .
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./assets:/app/assets:ro
